@@ -25,6 +25,9 @@ class Stack:
         if not self.is_empty():
             return self.items.pop()
 
+    def get_item(self,index):
+        return self.items[index]
+
     def is_empty(self):
         return len(self.items) == 0
 
@@ -68,11 +71,11 @@ class Explorer(AbstAgent):
         if self.id == 1:   #first agent's sequence of actions
             self.actions = ["N","S","E","W","NO","NE","SO","SE"]
         elif self.id == 2: #second agent's sequence of actions
-            self.actions = ["N","E","W","S","SO","NE","NO","SE"]
+            self.actions = ["N","SO","W","S","E","NE","NO","SE"]
         elif self.id == 3: #third agent's sequence of actions
             self.actions = ["NE","E","S","SO","W","N","NO","SE"]
         else:              #fourth agent's sequence of actions
-            self.actions = ["E","W","S","N","SE","SO","NO","NE"]
+            self.actions = ["NE","NO","E","N","SE","SO","W","S"]
 
         # put the current position - the base - in the map
         self.map.add((self.x, self.y), 1, VS.NO_VICTIM, self.check_walls_and_lim())
@@ -164,17 +167,35 @@ class Explorer(AbstAgent):
         
     def DFS_online(self):
         pos_atual = (self.x, self.y)
+        if not self.walk_stack.is_empty():
+            # recupera a direção anterior do agente
+            dx, dy = self.walk_stack.get_item(-1)
+            # recupera a posição anterior do agente
+            pos_anterior = (self.x - dx, self.y - dy)
         # se a posicao atual nao esta no dicionario untried
         if pos_atual not in self.untried:
             #   adiciona a posicao atual no untried com suas 8 opcoes
             self.untried[pos_atual] = list(range(8))
 
+        #a pilha no dicionário unbacktracked ainda não existe para esse estado
+        if pos_atual not in self.unbacktracked.keys(): 
+            # cria uma pilha vazia para o unbacktracked desse estado
+            self.unbacktracked[pos_atual] = []  
+            
         # transformando as direcoes do agente atual em numeros de 0 a 7
         lista_direcoes_agente = [self.action_order[action] for action in self.actions]
         # se todas as direcoes possiveis dessa posicao ja foram exploradas
         if all(action not in lista_direcoes_agente for action in self.untried.get(pos_atual, [])):
-            # coloca todas de novo pra explorar (unbacktracked??)
-            self.untried[pos_atual] = lista_direcoes_agente
+            # como irá retornar, define a posição anterior como a posição atual
+            pos_anterior = pos_atual
+            # atualiza posição atual com a primeira posição da pilha unbacktracked
+            pos_atual = self.unbacktracked[pos_atual].pop()
+            # recupera o delta necessário para voltar para posição anterior
+            delta_pos = (pos_atual[0] - pos_anterior[0], pos_atual[1] - pos_anterior[1])
+            # procura no dicionário de deltas (AC_INCR) pela direção que deve ser seguida
+            for key, value in Explorer.AC_INCR.items():
+                if value == delta_pos:
+                    return key
 
         #   verifica qual a ordem de direcoes desse agente e pega a primeira que der match no array
         #   correspondente da posicao atual do dicionario
@@ -182,8 +203,14 @@ class Explorer(AbstAgent):
             if direcao in self.untried[pos_atual]:
                 # retira esse valor das direcoes para essa posicao     
                 self.untried[pos_atual].remove(direcao)
+                if not self.walk_stack.is_empty():
+                    if pos_anterior not in self.unbacktracked[pos_atual]:
+                        # adiciona o estado anterior na pilha unbacktracked desse estado
+                        self.unbacktracked[pos_atual].append(pos_anterior)
                 # retorna a direcao
                 return direcao
+            else:
+                continue
     
     """
     antigo DFS online
