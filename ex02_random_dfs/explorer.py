@@ -71,11 +71,11 @@ class Explorer(AbstAgent):
         if self.id == 1:   #first agent's sequence of actions
             self.actions = ["N","S","E","W","NO","NE","SO","SE"]
         elif self.id == 2: #second agent's sequence of actions
-            self.actions = ["N","SO","W","S","E","NE","NO","SE"]
+            self.actions = ["N","E","W","S","SO","NE","NO","SE"]
         elif self.id == 3: #third agent's sequence of actions
             self.actions = ["NE","E","S","SO","W","N","NO","SE"]
         else:              #fourth agent's sequence of actions
-            self.actions = ["NE","NO","E","N","SE","SO","W","S"]
+            self.actions = ["E","W","S","N","SE","SO","NO","NE"]
 
         # put the current position - the base - in the map
         self.map.add((self.x, self.y), 1, VS.NO_VICTIM, self.check_walls_and_lim())
@@ -181,6 +181,9 @@ class Explorer(AbstAgent):
         if pos_atual not in self.unbacktracked.keys(): 
             # cria uma pilha vazia para o unbacktracked desse estado
             self.unbacktracked[pos_atual] = []  
+        if pos_atual not in self.backtracked.keys(): 
+            # cria uma pilha vazia para o backtracked (estados que o agente já retornou) desse estado
+            self.backtracked[pos_atual] = []  
             
         # transformando as direcoes do agente atual em numeros de 0 a 7
         lista_direcoes_agente = [self.action_order[action] for action in self.actions]
@@ -188,14 +191,22 @@ class Explorer(AbstAgent):
         if all(action not in lista_direcoes_agente for action in self.untried.get(pos_atual, [])):
             # como irá retornar, define a posição anterior como a posição atual
             pos_anterior = pos_atual
-            # atualiza posição atual com a primeira posição da pilha unbacktracked
-            pos_atual = self.unbacktracked[pos_atual].pop()
-            # recupera o delta necessário para voltar para posição anterior
-            delta_pos = (pos_atual[0] - pos_anterior[0], pos_atual[1] - pos_anterior[1])
-            # procura no dicionário de deltas (AC_INCR) pela direção que deve ser seguida
-            for key, value in Explorer.AC_INCR.items():
-                if value == delta_pos:
-                    return key
+            if len(self.unbacktracked[pos_anterior]) > 0:
+                # atualiza posição atual com a primeira posição da pilha unbacktracked
+                pos_atual = self.unbacktracked[pos_anterior].pop()      
+                # verifica se o agente ainda não voltou para essa posição
+                if pos_atual not in self.backtracked[pos_anterior]:
+                    # já que o agente está voltando, adiciona a próxima posição na pilha "backtracked"
+                    # para indicar que já voltei para essa posição
+                    self.backtracked[pos_anterior].append(pos_atual)
+                    # recupera o delta necessário para voltar para posição anterior
+                    delta_pos = (pos_atual[0] - pos_anterior[0], pos_atual[1] - pos_anterior[1])
+                    # procura no dicionário de deltas (AC_INCR) pela direção que deve ser seguida
+                    for key, value in Explorer.AC_INCR.items():
+                        if value == delta_pos:
+                            return key
+            
+            return random.randint(0,7)
 
         #   verifica qual a ordem de direcoes desse agente e pega a primeira que der match no array
         #   correspondente da posicao atual do dicionario
