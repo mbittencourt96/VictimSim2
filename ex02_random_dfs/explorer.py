@@ -67,6 +67,7 @@ class Explorer(AbstAgent):
         self.unbacktracked = {}
         self.untried = {}          # dicionario de direcoes ainda nao exploradas por um posicao (x,y)
                                    # (x,y) , [0, 1, 2, 3, 4, 5, 6, 7]
+        self.backtracked = {}
 
         if self.id == 1:   #first agent's sequence of actions
             self.actions = ["N","S","E","W","NO","NE","SO","SE"]
@@ -205,7 +206,7 @@ class Explorer(AbstAgent):
                     for key, value in Explorer.AC_INCR.items():
                         if value == delta_pos:
                             return key
-            
+                        
             return random.randint(0,7)
 
         #   verifica qual a ordem de direcoes desse agente e pega a primeira que der match no array
@@ -215,7 +216,7 @@ class Explorer(AbstAgent):
                 # retira esse valor das direcoes para essa posicao     
                 self.untried[pos_atual].remove(direcao)
                 if not self.walk_stack.is_empty():
-                    if pos_anterior not in self.unbacktracked[pos_atual]:
+                    if pos_anterior not in self.backtracked[pos_atual]:
                         # adiciona o estado anterior na pilha unbacktracked desse estado
                         self.unbacktracked[pos_atual].append(pos_anterior)
                 # retorna a direcao
