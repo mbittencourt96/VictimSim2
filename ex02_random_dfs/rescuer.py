@@ -434,12 +434,14 @@ class Rescuer(AbstAgent):
         #victims_info_array = [[1, (4, 2), 0], [2, (0, 0), 1], [3, (1, 5), 2],  [
            #4, (3, 3), 3], [5, (4, 2), 3], [6, (4, 2), 2], [7, (4, 2), 1]]
         
-        #if i > 1:
-         #   victims_info_array = self.clusters
-        #else:
-        victims_info_array = self.clusters[i]
+        if i > 1:
+           victims_info_array = self.clusters
+        else:
+            victims_info_array = self.clusters[i]
+
         my_sequences = self.sequencia(victims_info_array, [], [], [], 0)
-        self.sequences = dict(my_sequences)
+        #self.sequences = dict(my_sequences)
+        self.sequences = my_sequences
         #self.sequences = self.sequencia(self.victims_to_be_saved, [], [], [], 0)
         print("🤖 Fim do sequenciamento, rota de salvamento:")
         print(self.sequences)
@@ -464,7 +466,10 @@ class Rescuer(AbstAgent):
         # we consider only the first sequence (the simpler case)
         # The victims are sorted by x followed by y positions: [vic_id]: ((x,y), [<vs>]
 
-        sequence = self.sequences[0]
+        #sequence = self.sequences#[0]
+
+        sequence = {item[0]: item[1:] for item in self.sequences}
+
         start = (0,0) # always from starting at the base
         for vic_id in sequence:
             goal = sequence[vic_id][0]
@@ -519,7 +524,7 @@ class Rescuer(AbstAgent):
             self.clusters = victim_clusters  # the first one
 
             #Instantiate the other rescuers and assign the clusters to them
-            for i in range(1, 3):    
+            for i in range(1, 4):    
                 #print(f"{self.NAME} instantianting rescuer {i+1}, {self.get_env()}")
                 filename = f"rescuer_{i+1:1d}_config.txt"
                 config_file = os.path.join(self.config_folder, filename)
@@ -533,9 +538,9 @@ class Rescuer(AbstAgent):
 
             # For each rescuer, we calculate the rescue sequence 
             for i, rescuer in enumerate(rescuers):
-                self.sequencing(i+1)         # the sequencing will reorder the cluster            
-                self.planner()            # make the plan for the trajectory
-                self.set_state(VS.ACTIVE) # from now, the simulator calls the deliberation method 
+                rescuer.sequencing(i+1)         # the sequencing will reorder the cluster            
+                rescuer.planner()            # make the plan for the trajectory
+                rescuer.set_state(VS.ACTIVE) # from now, the simulator calls the deliberation method 
     
     def __depth_search(self, actions_res):
         enough_time = True
