@@ -40,6 +40,12 @@ class Map:
             @param actions_res: the results of the possible actions from the position (x, y) """
         self.map_data[coord] = (difficulty, victim_seq, actions_res)
 
+    def update(self, another_map):
+        """ Itupdates the current map with the entries of another map.
+            If the keys are identical, the entry of the another map replaces the entry of the current map.
+            @param another_map: other instance of Map """
+        self.map_data.update(another_map.map_data)
+
     def draw(self):
         if not self.map_data:
             print("Map is empty.")
@@ -63,5 +69,22 @@ class Map:
                     row += f"[     ?     ] "
             print(row)
 
+    def get_difficulty(self, coord):
+        """ get only the difficulty value associated to a coord key: a triple (diff, vic_id, [actions' results])
+            @param coord: a pair (x, y), the key of the dictionary"""
+        if self.in_map(coord):
+            return self.map_data.get(coord)[0]
+        else:
+            return 100
+
+    def get_vic_id(self, coord):
+        """ get only the victim id number associated to a coord key: a triple (diff, vic_id, [actions' results])
+            @param coord: a pair (x, y), the key of the dictionary"""
+        return self.map_data.get(coord)[1]
+
+    def get_actions_results(self, coord):
+        """ get only the actions' results associated to a coord key: a triple (diff, vic_id, [actions' results])
+            @param coord: a pair (x, y), the key of the dictionary"""
+        return self.map_data.get(coord)[2]
 
     

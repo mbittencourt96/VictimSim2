@@ -1,0 +1,7 @@
+id, x, y, grav, classe
+4, 8, 3, 0, potencialmente estável
+28, -5, -5, 0, potencialmente estável
+39, 0, 9, 0, potencialmente estável
+9, 5, 1, 0, potencialmente estável
+17, 11, 7, 0, potencialmente estável
+11, 9, 9, 0, potencialmente estável

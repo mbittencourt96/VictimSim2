@@ -34,18 +34,21 @@ class Stack:
 
 class Explorer(AbstAgent):
     instance_count = 0  #Class variable to keep track of the count of instances
+    """ class attribute """
+    MAX_DIFFICULTY = 1             # the maximum degree of difficulty to enter into a cell
 
-    def __init__(self, env, config_file, resc):
+    def __init__(self, env, config_file, env_file, resc):
         """ Construtor do agente random on-line
         @param env: a reference to the environment 
         @param config_file: the absolute path to the explorer's config file
         @param resc: a reference to the rescuer agent to invoke when exploration finishes
         """
 
-        super().__init__(env, config_file)
+        super().__init__(env, config_file)                
         Explorer.instance_count += 1
         self.id = Explorer.instance_count  #Unique id for the explorer
-        self.walk_stack = Stack()  # a stack to store the movements
+        self.walk_stack = Stack()  # a stack to store the movements7
+        self.walk_time = 0         # time consumed to walk when exploring (to decide when to come back)
         self.set_state(VS.ACTIVE)  # explorer is active since the begin
         self.resc = resc           # reference to the rescuer agent
         self.x = 0                 # current x position relative to the origin 0
@@ -302,27 +305,51 @@ class Explorer(AbstAgent):
             elif diff_x == -1:
                 return 5
     
+    # def deliberate(self) -> bool:
+    #     """ The agent chooses the next action. The simulator calls this
+    #     method at each cycle. Must be implemented in every agent"""
+
+    #     consumed_time = self.TLIM - self.get_rtime()
+    #     if consumed_time < self.get_rtime():
+    #         self.explore()
+    #         return True
+
+    #     # time to come back to the base
+    #     if self.walk_stack.is_empty() or (self.x == 0 and self.y == 0):
+    #         # time to wake up the rescuer
+    #         # pass the walls and the victims (here, they're empty)
+    #         print(f"{self.NAME}: rtime {self.get_rtime()}, invoking the rescuer")
+    #         #input(f"{self.NAME}: type [ENTER] to proceed")
+    #         self.resc.go_save_victims(self.map, self.victims)
+    #         return False
+
+    #     return self.come_back_with_astar()
+
     def deliberate(self) -> bool:
         """ The agent chooses the next action. The simulator calls this
         method at each cycle. Must be implemented in every agent"""
 
-        consumed_time = self.TLIM - self.get_rtime()
-        if consumed_time < self.get_rtime():
+        # forth and back: go, read the vital signals and come back to the position
+
+        time_tolerance = 2* self.COST_DIAG * Explorer.MAX_DIFFICULTY + self.COST_READ
+
+        # keeps exploring while there is enough time
+        if self.walk_time < (self.get_rtime() - time_tolerance):
             self.explore()
-            return True
 
-        # time to come back to the base
+        # no more come back walk actions to execute or already at base
         if self.walk_stack.is_empty() or (self.x == 0 and self.y == 0):
-            # time to wake up the rescuer
-            # pass the walls and the victims (here, they're empty)
-            print(f"{self.NAME}: rtime {self.get_rtime()}, invoking the rescuer")
-            #input(f"{self.NAME}: type [ENTER] to proceed")
-            self.resc.go_save_victims(self.map, self.victims)
+            # time to pass the map and found victims to the master rescuer
+            self.resc.sync_explorers(self.map, self.victims)
+            # finishes the execution of this agent
             return False
-
-        return self.come_back_with_astar()
+        else:
+            if self.get_rtime() <= self.TLIM / 2:
+                # proceed to the base
+                self.come_back_with_astar()
+                return True
+            return True
         
-
 # **************
 #  A-star
 # *************
@@ -361,6 +388,7 @@ class Explorer(AbstAgent):
         return adjacency_matrix
 
     def come_back_with_astar(self):
+        self.walk_stack.pop()
         # monta grafo com as posicoes exploradas (o mapa) usando matriz de adjacencias
         adjacency_matrix = self.build_adjacency_matrix()
 
